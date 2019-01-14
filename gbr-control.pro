@@ -5,7 +5,9 @@ CONFIG -= qt
 
 SOURCES += \
         main.cpp \
-    gbrdatabasehandler.cpp
+    gbrdatabasehandler.cpp \
+    gbrxml.cpp
 
 HEADERS += \
-    gbrdatabasehandler.h
+    gbrdatabasehandler.h \
+    gbrxml.h
