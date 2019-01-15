@@ -6,13 +6,15 @@ CONFIG -= qt
 CONFIG(release, debug|release): DEFINES += NDEBUG
 
 SOURCES += \
-        main.cpp \
     gbrdatabasehandler.cpp \
-    gbrxml.cpp
+    gbrxml.cpp \
+    gbrsocketlistener.cpp \
+    gbrsocketlistener_test.cpp
 
 HEADERS += \
     gbrdatabasehandler.h \
-    gbrxml.h
+    gbrxml.h \
+    gbrsocketlistener.h
 
 LIBS +=  \
     -ltinyxml2 \
