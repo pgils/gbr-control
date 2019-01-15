@@ -2,8 +2,6 @@
 #include <stdexcept>
 #include <sstream>
 #include <iostream>
-//TODO: MUTEX?
-//TODO: recursion
 
 gbrDatabaseHandler::gbrDatabaseHandler(const char* dbfile)
 {

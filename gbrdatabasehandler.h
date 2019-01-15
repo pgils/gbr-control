@@ -5,6 +5,10 @@
 #include <sqlite3.h>
 #include <vector>
 #include <string>
+#include "gbrxml.h"
+//TODO: MUTEX?
+//TODO: recursion
+//TODO: groups are now in nodeconfig..
 
 enum class DBResult
 {
@@ -15,26 +19,6 @@ enum class DBResult
     NOTFOUND,
     ERROR,
     NOOP,
-};
-
-struct NodeConfig
-{
-    int64_t		eui64;
-    std::string ipaddress;
-    int			active;
-    int			status;
-    int			role;
-    int			signal;
-
-    bool operator==(const NodeConfig& c) const
-    {
-        return (
-            c.eui64		== eui64 &&
-            c.ipaddress == ipaddress &&
-            c.status	== status &&
-            c.role		== role &&
-            c.signal	== signal);
-    }
 };
 
 class gbrDatabaseHandler
