@@ -59,6 +59,8 @@ DBResult gbrDatabaseHandler::GetNodeConfig(NodeConfig *conf)
         conf->role			= sqlite3_column_int(stmt, 2);
         conf->signal		= sqlite3_column_int(stmt, 3);
 
+        GetNodeGroups(conf->eui64, &conf->groups);
+
         ret					= DBResult::OK;
         break;
     case SQLITE_DONE:
@@ -156,6 +158,8 @@ int gbrDatabaseHandler::GetActiveNodes(std::vector<NodeConfig> *configs)
         conf.status			= sqlite3_column_int(stmt, 2);
         conf.role			= sqlite3_column_int(stmt, 3);
         conf.signal			= sqlite3_column_int(stmt, 4);
+
+        GetNodeGroups(conf.eui64, &conf.groups);
         configs->push_back(conf);
     }
     sqlite3_finalize(stmt);
