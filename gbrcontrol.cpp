@@ -59,6 +59,48 @@ int gbrControl::Run()
 
 int gbrControl::HandleNewMessage()
 {
+    std::string	xml = listener->GetLastMessage();
+    gbrXML		*xmlReader = new gbrXML(&xml);
+
+    switch(xmlReader->GetType())
+    {
+    case gbrXMLMessageType::GETCONFIGS:
+    {
+        std::vector<NodeConfig>	configs;
+        std::string				xml;
+
+        db->GetActiveNodes(&configs);
+        gbrXML xmlGenerator(&configs);
+
+        listener->SendLocal(xmlGenerator.GetXML());
+
+        break;
+    }
+    case gbrXMLMessageType::SETCONFIGS:
+    {
+        for( NodeConfig newConfig : *xmlReader->GetNodeConfigs() )
+        {
+            db->StoreNodeConfig((&newConfig));
+        }
+        break;
+    }
+    case gbrXMLMessageType::NODECONFIG:
+    {
+        db->StoreNodeConfig(xmlReader->GetNodeConfig());
+        break;
+    }
+    case gbrXMLMessageType::SENDSIGNAL:
+    {
+        gbrXML xmlGenerator(xmlReader->GetSignal());
+        listener->SendMultiCast(xmlGenerator.GetXML());
+        break;
+    }
+    default:
+        break;
+    }
+
+    delete xmlReader;
+
     std::cout << listener->GetLastMessage() << std::endl;
     std::cout << "From: " << listener->GetLastSender() << std::endl;
 
