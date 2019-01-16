@@ -142,6 +142,11 @@ int main()
     gbrXML *x11 = new gbrXML(&xml11);
     std::cout << "Type: " << static_cast<int>(x11->GetType()) << std::endl;
 
+
+    std::string xml12 = "neessagetype>getconfigs</messagetype>";
+    gbrXML *x12 = new gbrXML(&xml12);
+    std::cout << "Type: " << static_cast<int>(x12->GetType()) << std::endl;
+
     delete x1; delete x2; delete x3; delete x4; delete x5;
     delete x6; delete x7; delete x8; delete x9; delete x10;
     delete x11;
