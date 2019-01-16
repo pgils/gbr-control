@@ -18,7 +18,7 @@ private:
     gbrSocketListener& operator=( const gbrSocketListener& );
 
 public:
-    int ListenForMessage();
+    long ListenForMessage();
     int SendMultiCast(std::string *message);
     std::string GetLastMessage() const;
     std::string GetLastSender() const;

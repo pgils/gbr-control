@@ -77,7 +77,7 @@ gbrSocketListener::~gbrSocketListener()
     close(this->sock);
 }
 
-int gbrSocketListener::ListenForMessage()
+long gbrSocketListener::ListenForMessage()
 {
     long	bytesReceived;
     char	messageBuf[BUFLEN];
@@ -96,7 +96,7 @@ int gbrSocketListener::ListenForMessage()
     this->mLastMessage	= messageBuf;
     this->mLastSender	= senderBuf;
 
-    return 0;
+    return bytesReceived;
 }
 
 int gbrSocketListener::SendMultiCast(std::string *message)
