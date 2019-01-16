@@ -19,16 +19,18 @@ private:
 
 public:
     long ListenForMessage();
+    int SendMessage(std::string *message, sockaddr_in6 *sockIn);
     int SendMultiCast(std::string *message);
+    int SendLocal(std::string *message);
     std::string GetLastMessage() const;
     std::string GetLastSender() const;
 
 private:
-    struct sockaddr_in6	localSi;
-    struct sockaddr_in6 senderSi;
-    struct sockaddr_in6 multicastSi;
+    struct sockaddr_in6	receiverSi;
+    struct sockaddr_in6	multicastSi;
+    struct sockaddr_in6	remoteSi;
     int					sock;
-    socklen_t			slen;
+    socklen_t			rlen;
 
     std::string			mLastMessage;
     std::string			mLastSender;

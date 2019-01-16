@@ -1,4 +1,4 @@
-// INET6 socket listener
+﻿// INET6 socket listener
 // based on the example:
 // https://www.binarytides.com/programming-udp-sockets-c-linux/
 
@@ -19,19 +19,19 @@ gbrSocketListener::gbrSocketListener(unsigned short port)
     }
 
     //zero out the sockaddrs
-    memset( reinterpret_cast<char*>(&this->localSi), 0, sizeof(this->localSi) );
+    memset( reinterpret_cast<char*>(&this->receiverSi), 0, sizeof(this->receiverSi) );
     memset( reinterpret_cast<char*>(&this->multicastSi), 0, sizeof(this->multicastSi) );
 
-    this->slen						= sizeof(this->senderSi);
+    this->rlen						= sizeof(this->remoteSi);
 
     // Set up sockaddr for receiving messages
-    this->localSi.sin6_family		= AF_INET6;
-    this->localSi.sin6_port			= htons(port);
-    this->localSi.sin6_addr			= in6addr_any;
+    this->receiverSi.sin6_family		= AF_INET6;
+    this->receiverSi.sin6_port			= htons(port);
+    this->receiverSi.sin6_addr			= in6addr_any;
 
-    // Set up sockaddr for multicasting
-    this->multicastSi.sin6_family	= AF_INET6;
-    this->multicastSi.sin6_port		= htons(port);
+    // Set up sockaddr for sending messages
+    this->multicastSi.sin6_family		= AF_INET6;
+    this->multicastSi.sin6_port			= htons(port);
     inet_pton(AF_INET6, "ff03::1", &this->multicastSi.sin6_addr);
 
     // Get Interface index for wpan0
@@ -65,8 +65,8 @@ gbrSocketListener::gbrSocketListener(unsigned short port)
     }
 
     // Bind socket to port
-    if( -1 == bind(this->sock, reinterpret_cast<struct sockaddr*>(&this->localSi),
-                   sizeof (this->localSi)) )
+    if( -1 == bind(this->sock, reinterpret_cast<struct sockaddr*>(&this->receiverSi),
+                   sizeof (this->receiverSi)) )
     {
         throw std::runtime_error("Failed to bind to port.");
     }
@@ -93,11 +93,11 @@ long gbrSocketListener::ListenForMessage()
 {
     long	bytesReceived;
     char	messageBuf[BUFLEN];
-    char	senderBuf[INET6_ADDRSTRLEN];
+    char	remoteBuf[INET6_ADDRSTRLEN];
 
     bytesReceived = recvfrom(this->sock, messageBuf, BUFLEN, 0,
-                             reinterpret_cast<struct sockaddr*>(&this->senderSi),
-                             &this->slen);
+                             reinterpret_cast<struct sockaddr*>(&this->remoteSi),
+                             &this->rlen);
     // Ignore EAGAIN(11)
     // recvfrom returns EAGAIN if a timeout occurs
     if( -1 == bytesReceived && EAGAIN != errno)
@@ -107,24 +107,35 @@ long gbrSocketListener::ListenForMessage()
     else if( 0 < bytesReceived )
     {
         //Get the sender's IP-address
-        inet_ntop(AF_INET6, &this->senderSi.sin6_addr, senderBuf, sizeof(this->senderSi));
+        inet_ntop(AF_INET6, &this->remoteSi.sin6_addr, remoteBuf, sizeof(this->remoteSi));
 
         this->mLastMessage	= messageBuf;
-        this->mLastSender	= senderBuf;
+        this->mLastSender	= remoteBuf;
     }
 
     return bytesReceived;
 }
 
-int gbrSocketListener::SendMultiCast(std::string *message)
+int gbrSocketListener::SendMessage(std::string *message, sockaddr_in6 *sockIn)
 {
     if( -1 == sendto(this->sock, message->c_str(), message->length(), 0,
-                  reinterpret_cast<struct sockaddr*>(&this->multicastSi),
-                  sizeof(this->multicastSi)) )
+                  reinterpret_cast<struct sockaddr*>(sockIn),
+                  sizeof(*sockIn)) )
     {
         return 1;
     }
     return 0;
+}
+
+
+int gbrSocketListener::SendLocal(std::string *message)
+{
+    return SendMessage(message, &this->remoteSi);
+}
+
+int gbrSocketListener::SendMultiCast(std::string *message)
+{
+    return SendMessage(message, &this->multicastSi);
 }
 
 std::string gbrSocketListener::GetLastMessage() const
