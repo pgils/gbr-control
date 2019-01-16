@@ -138,8 +138,13 @@ int main()
         std::cout << conf << std::endl;
     }
 
+    std::string xml11 = "<mess";
+    gbrXML *x11 = new gbrXML(&xml11);
+    std::cout << "Type: " << static_cast<int>(x11->GetType()) << std::endl;
+
     delete x1; delete x2; delete x3; delete x4; delete x5;
-    delete x6; delete x7; delete x8; delete x9;
+    delete x6; delete x7; delete x8; delete x9; delete x10;
+    delete x11;
 
 
     std::cout << "TEST COMPLETE" << std::endl;
