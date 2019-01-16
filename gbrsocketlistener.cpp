@@ -6,6 +6,7 @@
 #include "gbrsocketlistener.h"
 
 #include <stdexcept>
+#include <cerrno>		// for errno.
 #include <cstring>		// for memset.
 #include <unistd.h>		// for close.
 #include <net/if.h>		// for if_nametoindex.
@@ -52,6 +53,17 @@ gbrSocketListener::gbrSocketListener(unsigned short port)
         throw std::runtime_error("Failed to disable loopback for socket.");
     }
 
+    // Set receive timeout for the socket.
+    // This way the gbrControl can be stopped cleanly if running as a daemon.
+    struct timeval tv;
+    tv.tv_sec	= 5;
+    tv.tv_usec	= 0;
+    if( -1 == setsockopt(this->sock, SOL_SOCKET, SO_RCVTIMEO,
+            reinterpret_cast<const char*>(&tv), sizeof(tv)))
+    {
+        throw std::runtime_error("Failed to set socket receive timeout.");
+    }
+
     // Bind socket to port
     if( -1 == bind(this->sock, reinterpret_cast<struct sockaddr*>(&this->localSi),
                    sizeof (this->localSi)) )
@@ -83,18 +95,23 @@ long gbrSocketListener::ListenForMessage()
     char	messageBuf[BUFLEN];
     char	senderBuf[INET6_ADDRSTRLEN];
 
-    if( -1 == (bytesReceived = recvfrom(this->sock, messageBuf, BUFLEN, 0,
-                                        reinterpret_cast<struct sockaddr*>(&this->senderSi),
-                                        &this->slen)) )
+    bytesReceived = recvfrom(this->sock, messageBuf, BUFLEN, 0,
+                             reinterpret_cast<struct sockaddr*>(&this->senderSi),
+                             &this->slen);
+    // Ignore EAGAIN(11)
+    // recvfrom returns EAGAIN if a timeout occurs
+    if( -1 == bytesReceived && EAGAIN != errno)
     {
         throw std::runtime_error("Failed to receive message.");
     }
+    else if( 0 < bytesReceived )
+    {
+        //Get the sender's IP-address
+        inet_ntop(AF_INET6, &this->senderSi.sin6_addr, senderBuf, sizeof(this->senderSi));
 
-    //Get the sender's IP-address
-    inet_ntop(AF_INET6, &this->senderSi.sin6_addr, senderBuf, sizeof(this->senderSi));
-
-    this->mLastMessage	= messageBuf;
-    this->mLastSender	= senderBuf;
+        this->mLastMessage	= messageBuf;
+        this->mLastSender	= senderBuf;
+    }
 
     return bytesReceived;
 }
