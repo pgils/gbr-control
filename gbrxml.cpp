@@ -63,12 +63,15 @@ int gbrXML::NodeConfigToXML(tinyxml2::XMLPrinter *printer, NodeConfig *conf)
     AddXMLElement(printer, "ipaddress", conf->ipaddress.c_str());
     AddXMLElement(printer, "status", conf->status);
     AddXMLElement(printer, "role", conf->role);
-    printer->OpenElement("groups", XML_COMPACT);
-    for( int group : conf->groups )
+    if( 0 < conf->groups.size() )
     {
-        AddXMLElement(printer, "group", group);
+        printer->OpenElement("groups", XML_COMPACT);
+        for( int group : conf->groups )
+        {
+            AddXMLElement(printer, "group", group);
+        }
+        printer->CloseElement(XML_COMPACT);
     }
-    printer->CloseElement(XML_COMPACT);
     AddXMLElement(printer, "signal", conf->signal);
     printer->CloseElement(XML_COMPACT);
 
@@ -100,12 +103,15 @@ int gbrXML::BuildXML(XMLOperation op)
     case FROM_SIGNAL:
         AddXMLElement(&printer, "messagetype", TypeMap.at(gbrXMLMessageType::SIGNAL));
         AddXMLElement(&printer, "signal", this->mSignal.signal);
-        printer.OpenElement("groups", XML_COMPACT);
-        for( int group : this->mSignal.groups )
+        if( 0 < this->mSignal.groups.size() )
         {
-            AddXMLElement(&printer, "group", group);
+            printer.OpenElement("groups", XML_COMPACT);
+            for( int group : this->mSignal.groups )
+            {
+                AddXMLElement(&printer, "group", group);
+            }
+            printer.CloseElement(XML_COMPACT);
         }
-        printer.CloseElement(XML_COMPACT);
         this->mXml = printer.CStr();
         break;
     default:
