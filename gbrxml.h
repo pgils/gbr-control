@@ -1,4 +1,4 @@
-#ifndef GBRXML_H
+﻿#ifndef GBRXML_H
 #define GBRXML_H
 
 #include <vector>
@@ -44,6 +44,7 @@ struct NodeConfig
             c.eui64		== eui64 &&
             c.ipaddress == ipaddress &&
             c.status	== status &&
+            c.groups	== groups &&
             c.role		== role &&
             c.signal	== signal);
     }
