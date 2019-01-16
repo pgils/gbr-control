@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <csignal>
+#include <cassert>
 
 gbrControl::gbrControl(const char* database, unsigned short port)
 {
@@ -60,16 +61,21 @@ int gbrControl::Run()
 int gbrControl::HandleNewMessage()
 {
     std::string	xml = listener->GetLastMessage();
-    gbrXML		*xmlReader = new gbrXML(&xml);
+    gbrXML		xmlReader(&xml);
 
-    switch(xmlReader->GetType())
+    switch(xmlReader.GetType())
     {
     case gbrXMLMessageType::GETCONFIGS:
     {
         std::vector<NodeConfig>	configs;
         std::string				xml;
 
-        db->GetActiveNodes(&configs);
+        try {
+            db->GetActiveNodes(&configs);
+        } catch (std::runtime_error& e) {
+            std::cout << e.what() << std::endl;
+            return 1;
+        }
         gbrXML xmlGenerator(&configs);
 
         listener->SendLocal(xmlGenerator.GetXML());
@@ -78,28 +84,36 @@ int gbrControl::HandleNewMessage()
     }
     case gbrXMLMessageType::SETCONFIGS:
     {
-        for( NodeConfig newConfig : *xmlReader->GetNodeConfigs() )
+        for( NodeConfig newConfig : *xmlReader.GetNodeConfigs() )
         {
-            db->StoreNodeConfig((&newConfig));
+            try {
+                db->StoreNodeConfig(&newConfig);
+            } catch (std::runtime_error& e) {
+                std::cout << e.what() << std::endl;
+                return 1;
+            }
         }
         break;
     }
     case gbrXMLMessageType::NODECONFIG:
     {
-        db->StoreNodeConfig(xmlReader->GetNodeConfig());
+        try {
+            db->StoreNodeConfig(xmlReader.GetNodeConfig());
+        } catch (std::runtime_error& e) {
+            std::cout << e.what() << std::endl;
+            return 1;
+        }
         break;
     }
     case gbrXMLMessageType::SENDSIGNAL:
     {
-        gbrXML xmlGenerator(xmlReader->GetSignal());
+        gbrXML xmlGenerator(xmlReader.GetSignal());
         listener->SendMultiCast(xmlGenerator.GetXML());
         break;
     }
     default:
         break;
     }
-
-    delete xmlReader;
 
     std::cout << listener->GetLastMessage() << std::endl;
     std::cout << "From: " << listener->GetLastSender() << std::endl;
