@@ -109,6 +109,7 @@ long gbrSocketListener::ListenForMessage()
         //Get the sender's IP-address
         inet_ntop(AF_INET6, &this->remoteSi.sin6_addr, remoteBuf, sizeof(this->remoteSi));
 
+        messageBuf[bytesReceived] = '\0';
         this->mLastMessage	= messageBuf;
         this->mLastSender	= remoteBuf;
     }
