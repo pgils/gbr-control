@@ -9,12 +9,13 @@ SOURCES += \
     gbrdatabasehandler.cpp \
     gbrxml.cpp \
     gbrsocketlistener.cpp \
-    gbrsocketlistener_test.cpp
+    gbrcontrol.cpp
 
 HEADERS += \
     gbrdatabasehandler.h \
     gbrxml.h \
-    gbrsocketlistener.h
+    gbrsocketlistener.h \
+    gbrcontrol.h
 
 LIBS +=  \
     -ltinyxml2 \
