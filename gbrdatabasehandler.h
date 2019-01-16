@@ -8,7 +8,7 @@
 #include "gbrxml.h"
 //TODO: MUTEX?
 //TODO: recursion
-//TODO: groups are now in nodeconfig..
+//TODO: does the add/remove group work?
 
 enum class DBResult
 {
@@ -45,6 +45,7 @@ public:
     int RemoveGroup(int group);
     int AddNodeToGroup(int64_t eui64, int group, bool remove = false);
     int RemoveNodeFromGroup(int64_t eui64, int group);
+    int RemoveNodeFromAllGroups(int64_t eui64);
     int GetSignalTargets(std::vector<NodeConfig> *configs, std::vector<int> groups);
     int GetActiveNodes(std::vector<NodeConfig> *configs);
 

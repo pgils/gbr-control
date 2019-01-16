@@ -197,6 +197,12 @@ DBResult gbrDatabaseHandler::StoreNodeConfig(NodeConfig *conf)
         sqlite3_step(stmt); //TODO: handle this?
         sqlite3_finalize(stmt);
 
+        for( int group : conf->groups )
+        {
+            CreateGroup(group);
+            AddNodeToGroup(conf->eui64, group);
+        }
+
         ret = DBResult::INSERTED;
     break;
     default:
@@ -217,6 +223,13 @@ DBResult gbrDatabaseHandler::StoreNodeConfig(NodeConfig *conf)
         sqlite3_bind_int64(stmt, 2, tmpConf.eui64);
         sqlite3_step(stmt); // TODO: handle this?
         sqlite3_finalize(stmt);
+
+        RemoveNodeFromAllGroups(tmpConf.eui64);
+        for( int group : tmpConf.groups )
+        {
+            CreateGroup(group);
+            AddNodeToGroup(tmpConf.eui64, group);
+        }
     }
     return ret;
 }
@@ -291,4 +304,25 @@ int gbrDatabaseHandler::AddNodeToGroup(int64_t eui64, int group, bool remove)
 int gbrDatabaseHandler::RemoveNodeFromGroup(int64_t eui64, int group)
 {
     return AddNodeToGroup(eui64, group, true);
+}
+
+int gbrDatabaseHandler::RemoveNodeFromAllGroups(int64_t eui64)
+{
+    std::string		sql;
+    sqlite3_stmt	*stmt	= nullptr;
+    int				sqliteRet;
+
+    sql 		= "DELETE FROM tblGroup_node WHERE node_eui64=?1";
+
+    try {
+        PrepareStatement(sql, &stmt);
+    } catch (std::runtime_error&) {
+        throw;
+    }
+    sqlite3_bind_int64(stmt, 1, eui64);
+
+    sqliteRet	= sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
+
+    return sqliteRet;
 }
