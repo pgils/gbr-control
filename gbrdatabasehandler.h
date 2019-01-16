@@ -35,6 +35,7 @@ private:
     sqlite3 *dbHandle;
 
     int PrepareStatement(const std::string sql, sqlite3_stmt **stmt);
+    int FinalizeStatement(const std::string message, sqlite3_stmt **stmt);
 
 public:
     DBResult StoreNodeConfig(NodeConfig *conf);
