@@ -212,17 +212,37 @@ DBResult gbrDatabaseHandler::StoreNodeConfig(NodeConfig *conf)
 
     if( DBResult::UPDATED == ret )
     {
+        std::ostringstream sql;
+        sql << "UPDATE tblNode SET ";
+        // IP-address isn't a mandatory element. (GUI doesn't send ip-addresses)
+        // so only update it if one is provided.
+        if( 0 < tmpConf.ipaddress.length() )
+        {
+            sql << "ipaddress=?1, ";
+        }
+        sql << "status_id=?2, role_id=?3, signal_id=?4 ";
+        sql << "WHERE eui64=?5";
+
         try {
-            PrepareStatement("UPDATE tblNode SET ipaddress=?1"
-                            "WHERE eui64=?2", &stmt);
+           PrepareStatement(sql.str(), &stmt);
         } catch (const std::runtime_error&) {
             throw;
         }
         sqlite3_bind_text(stmt, 1, tmpConf.ipaddress.c_str(),
-                        int(tmpConf.ipaddress.length()), SQLITE_TRANSIENT);
-        sqlite3_bind_int64(stmt, 2, tmpConf.eui64);
-        sqlite3_step(stmt); // TODO: handle this?
-        sqlite3_finalize(stmt);
+                int(tmpConf.ipaddress.length()), SQLITE_TRANSIENT);
+        sqlite3_bind_int(stmt, 2, tmpConf.status);
+        sqlite3_bind_int(stmt, 3, tmpConf.role);
+        sqlite3_bind_int(stmt, 4, tmpConf.signal);
+        sqlite3_bind_int64(stmt, 5, tmpConf.eui64);
+        sqlite3_step(stmt);
+        try {
+            std::string msg		= "UPDATE-ing node: ";
+            msg.append(std::to_string(tmpConf.eui64));
+
+            FinalizeStatement(msg, &stmt);
+        } catch (std::runtime_error&) {
+            throw;
+        }
 
         RemoveNodeFromAllGroups(tmpConf.eui64);
         for( int group : tmpConf.groups )
