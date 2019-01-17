@@ -16,7 +16,7 @@ CREATE TABLE tblSignal (
 CREATE TABLE tblNode (
     eui64       INTEGER PRIMARY KEY,
     ipaddress   TEXT NOT NULL,
-    active      INTEGER NOT NULL,
+    active      INTEGER DEFAULT 0,
     status_id   INTEGER NOT NULL,
     role_id     INTEGER NOT NULL,
     signal_id   INTEGER DEFAULT 0,

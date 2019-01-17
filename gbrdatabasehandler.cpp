@@ -223,15 +223,14 @@ DBResult gbrDatabaseHandler::StoreNodeConfig(NodeConfig *conf)
     case DBResult::NOTFOUND:
         //TODO: always enter as uninitialized?
         try {
-            PrepareStatement("INSERT INTO tblNode (eui64, ipaddress, active, status_id, role_id, signal_id)"
-                            " VALUES(?1, ?2, ?3, ?4, ?5, ?6)", &stmt);
+            PrepareStatement("INSERT INTO tblNode (eui64, ipaddress, status_id, role_id, signal_id)"
+                            " VALUES(?1, ?2, ?4, ?5, ?6)", &stmt);
         } catch (std::runtime_error&) {
             throw;
         }
         sqlite3_bind_int64	(stmt, 1, conf->eui64);
         sqlite3_bind_text	(stmt, 2, conf->ipaddress.c_str(),
                             int(conf->ipaddress.length()), SQLITE_TRANSIENT);
-        sqlite3_bind_int	(stmt, 3, conf->active);
         sqlite3_bind_int	(stmt, 4, conf->status);
         sqlite3_bind_int	(stmt, 5, conf->role);
         sqlite3_bind_int	(stmt, 6, conf->signal);
