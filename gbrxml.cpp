@@ -2,6 +2,7 @@
 #include <iostream>
 #include <tinyxml2.h>
 #include <cstring>
+#include <stdexcept>
 
 using namespace tinyxml2;
 
@@ -14,7 +15,11 @@ gbrXML::gbrXML(XMLOperation op, gbrXMLMessageType *type, std::string *xml,
     if( configs != nullptr ) { this->mConfigs	= *configs;	}
     if( signal  != nullptr ) { this->mSignal	= *signal;	}
 
-    ( FROM_XML_STRING == op ) ? ReadXML() : BuildXML(op);
+    try {
+        ( FROM_XML_STRING == op ) ? ReadXML() : BuildXML(op);
+    } catch (std::runtime_error&) {
+        throw;
+    }
 }
 
 gbrXML::~gbrXML()
@@ -130,8 +135,9 @@ XMLError gbrXML::GetXMLElementValue(XMLHandle *handle, const char* name,
     {
         return (element->*query)( target );
     }
-
-    return XMLError::XML_NO_ATTRIBUTE;
+    std::ostringstream oss;
+    oss << "Failed to get XML Element: " << name << std::endl;
+    throw std::runtime_error(oss.str());
 }
 
 int gbrXML::GetXMLGroupElement(XMLHandle *handle, std::vector<int> *target)
@@ -161,10 +167,14 @@ int gbrXML::GetXMLGroupElement(XMLHandle *handle, std::vector<int> *target)
 
 int gbrXML::GetXMLNodeElement(XMLHandle *handle, NodeConfig *config)
 {
-    GetXMLElementValue(handle, "eui64", 	&XMLElement::QueryInt64Text, 	&config->eui64);
-    GetXMLElementValue(handle, "status", 	&XMLElement::QueryIntText, 		&config->status);
-    GetXMLElementValue(handle, "role", 		&XMLElement::QueryIntText, 		&config->role);
-    GetXMLElementValue(handle, "signal", 	&XMLElement::QueryIntText, 		&config->signal);
+    try {
+        GetXMLElementValue(handle, "eui64", 	&XMLElement::QueryInt64Text, 	&config->eui64);
+        GetXMLElementValue(handle, "status", 	&XMLElement::QueryIntText, 		&config->status);
+        GetXMLElementValue(handle, "role", 		&XMLElement::QueryIntText, 		&config->role);
+        GetXMLElementValue(handle, "signal", 	&XMLElement::QueryIntText, 		&config->signal);
+    } catch (std::runtime_error&) {
+        throw;
+    }
 
     // Get the ip-adress directly, as it is stored in string format.
     XMLElement *ipElement		= handle->FirstChildElement("ipaddress").ToElement();
@@ -211,7 +221,11 @@ int gbrXML::ReadXML()
     {
     case gbrXMLMessageType::SENDSIGNAL:
     case gbrXMLMessageType::SIGNAL:
+        try {
         GetXMLElementValue(&docHandle, "signal", &XMLElement::QueryIntText, &this->mSignal.signal);
+    } catch (std::runtime_error&) {
+        throw;
+    }
         GetXMLGroupElement(&docHandle, &this->mSignal.groups);
         break;
     case gbrXMLMessageType::NODECONFIG:
@@ -221,7 +235,11 @@ int gbrXML::ReadXML()
         {
             return 1;
         }
-        GetXMLNodeElement(&nodeHandle, &this->mConf);
+        try {
+            GetXMLNodeElement(&nodeHandle, &this->mConf);
+        } catch (std::runtime_error&) {
+            throw;
+        }
 
         break;
     }
@@ -235,7 +253,11 @@ int gbrXML::ReadXML()
         {
             return 1;
         }
-        GetXMLNodeElement(&nodeHandle, &conf);
+        try {
+            GetXMLNodeElement(&nodeHandle, &conf);
+        } catch (std::runtime_error&) {
+            throw;
+        }
         this->mConfigs.push_back(conf);
 
         // Get additional nodes if present
@@ -243,7 +265,11 @@ int gbrXML::ReadXML()
         {
             NodeConfig conf;
             nodeHandle			= nodeHandle.NextSiblingElement();
-            GetXMLNodeElement(&nodeHandle, &conf);
+            try {
+                GetXMLNodeElement(&nodeHandle, &conf);
+            } catch (std::runtime_error&) {
+                throw;
+            }
             this->mConfigs.push_back(conf);
         }
         break;

@@ -61,9 +61,15 @@ int gbrControl::Run()
 int gbrControl::HandleNewMessage()
 {
     std::string	xml = listener->GetLastMessage();
-    gbrXML		xmlReader(&xml);
+    gbrXML		*xmlReader;
+    try {
+        xmlReader = new gbrXML(&xml);
+    } catch (std::runtime_error& e) {
+        std::cout << e.what() << std::endl;
+        return 0;
+    }
 
-    switch(xmlReader.GetType())
+    switch(xmlReader->GetType())
     {
     case gbrXMLMessageType::GETCONFIGS:
     {
@@ -84,7 +90,7 @@ int gbrControl::HandleNewMessage()
     }
     case gbrXMLMessageType::SETCONFIGS:
     {
-        for( NodeConfig newConfig : *xmlReader.GetNodeConfigs() )
+        for( NodeConfig newConfig : *xmlReader->GetNodeConfigs() )
         {
             try {
                 db->StoreNodeConfig(&newConfig);
@@ -98,7 +104,7 @@ int gbrControl::HandleNewMessage()
     case gbrXMLMessageType::NODECONFIG:
     {
         try {
-            db->StoreNodeConfig(xmlReader.GetNodeConfig());
+            db->StoreNodeConfig(xmlReader->GetNodeConfig());
         } catch (std::runtime_error& e) {
             std::cout << e.what() << std::endl;
             return 1;
@@ -107,7 +113,7 @@ int gbrControl::HandleNewMessage()
     }
     case gbrXMLMessageType::SENDSIGNAL:
     {
-        gbrXML xmlGenerator(xmlReader.GetSignal());
+        gbrXML xmlGenerator(xmlReader->GetSignal());
         listener->SendMultiCast(xmlGenerator.GetXML());
         break;
     }
