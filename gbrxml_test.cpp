@@ -71,12 +71,11 @@ int main()
         std::cout << "group: " << group << std::endl;
     }
     std::string xml7 = "<messagetype>signal</messagetype>";
-    gbrXML *x7 = new gbrXML(&xml7);
-
-    std::cout << "signal: " << x7->GetSignal()->signal << std::endl;
-    for( int group : x7->GetSignal()->groups )
-    {
-        std::cout << "group: " << group << std::endl;
+    gbrXML *x7;
+    try {
+        x7 = new gbrXML(&xml7);
+    } catch (std::runtime_error& e) {
+        std::cout << e.what() << std::endl;
     }
 
     std::string xml8 = "<messagetype>nodeconfig</messagetype>"
@@ -84,8 +83,14 @@ int main()
                        "<eui64>555</eui64>"
                        "<status>1</status>"
                        "<role>2</role>"
+                       "<signal>0</signal>"
                        "</node>";
-    gbrXML *x8 = new gbrXML(&xml8);
+    gbrXML *x8;
+    try {
+        x8 = new gbrXML(&xml8);
+    } catch (std::runtime_error& e) {
+        std::cout << e.what() << std::endl;
+    }
 
     std::cout << *x8->GetNodeConfig() << std::endl;
 
@@ -98,6 +103,7 @@ int main()
                        "<groups>"
                        "<group>40</group>"
                        "</groups>"
+                       "<signal>0</signal>"
                        "</node>";
     gbrXML *x9 = new gbrXML(&xml9);
 
@@ -119,6 +125,7 @@ int main()
             "<eui64>456</eui64>"
             "<status>2</status>"
             "<role>2</role>"
+            "<signal>0</signal>"
             "</node>"
             "<node>"
             "<eui64>66666</eui64>"
@@ -147,9 +154,13 @@ int main()
     gbrXML *x12 = new gbrXML(&xml12);
     std::cout << "Type: " << static_cast<int>(x12->GetType()) << std::endl;
 
+    std::string xml13 = "<messagetype></messagetype>";
+    gbrXML *x13 = new gbrXML(&xml13);
+    std::cout << "Type: " << static_cast<int>(x13->GetType()) << std::endl;
+
     delete x1; delete x2; delete x3; delete x4; delete x5;
-    delete x6; delete x7; delete x8; delete x9; delete x10;
-    delete x11;
+    delete x6; delete x8; delete x9; delete x10;
+    delete x11; delete x12; delete x13;
 
 
     std::cout << "TEST COMPLETE" << std::endl;
