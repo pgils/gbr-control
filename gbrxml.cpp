@@ -138,6 +138,8 @@ XMLError gbrXML::GetXMLElementValue(XMLHandle *handle, const char* name,
     std::ostringstream oss;
     oss << "Failed to get XML Element: " << name << std::endl;
     throw std::runtime_error(oss.str());
+
+    return XMLError::XML_NO_ATTRIBUTE;
 }
 
 int gbrXML::GetXMLGroupElement(XMLHandle *handle, std::vector<int> *target)
@@ -194,6 +196,8 @@ int gbrXML::ReadXML()
     XMLDocument 	doc;
     XMLHandle		docHandle( &doc );
     const char		*rawMessageType;
+    NodeConfig conf;
+
     std::map<gbrXMLMessageType, const char*>::const_iterator it;
 
     if( XML_SUCCESS != doc.Parse(this->mXml.c_str()))
@@ -245,8 +249,6 @@ int gbrXML::ReadXML()
     }
     case gbrXMLMessageType::SETCONFIGS:
     {
-        NodeConfig conf;
-
         // Get the first node
         XMLHandle nodeHandle	= docHandle.FirstChildElement("node");
         if( !nodeHandle.ToElement() )
@@ -263,7 +265,6 @@ int gbrXML::ReadXML()
         // Get additional nodes if present
         while( (nodeHandle.NextSiblingElement().ToElement()) )
         {
-            NodeConfig conf;
             nodeHandle			= nodeHandle.NextSiblingElement();
             try {
                 GetXMLNodeElement(&nodeHandle, &conf);
