@@ -195,22 +195,23 @@ int gbrXML::ReadXML()
 {
     XMLDocument 	doc;
     XMLHandle		docHandle( &doc );
-    const char		*rawMessageType;
+    const char		*rawMessageType = nullptr;
     NodeConfig conf;
 
     std::map<gbrXMLMessageType, const char*>::const_iterator it;
 
-    if( XML_SUCCESS != doc.Parse(this->mXml.c_str()))
+    if( XML_SUCCESS == doc.Parse(this->mXml.c_str()))
+    {
+        XMLHandle messageTypeHandle = docHandle.FirstChildElement("messagetype");
+        if( messageTypeHandle.ToElement() )
+        {
+            rawMessageType = messageTypeHandle.ToElement()->GetText();
+        }
+    }
+    if( !rawMessageType )
     {
         return 1;
     }
-
-    XMLHandle		messageTypeHandle = docHandle.FirstChildElement("messagetype");
-    if( !messageTypeHandle.ToElement() )
-    {
-        return 1;
-    }
-    rawMessageType = messageTypeHandle.ToElement()->GetText();
 
     // lookup MessageType
     for( it = TypeMap.begin(); it != TypeMap.end(); ++it )
