@@ -62,6 +62,10 @@ int gbrControl::HandleNewMessage()
 {
     std::string	xml = listener->GetLastMessage();
     gbrXML		*xmlReader;
+
+    std::cout << listener->GetLastMessage() << std::endl;
+    std::cout << "From: " << listener->GetLastSender() << std::endl;
+
     try {
         xmlReader = new gbrXML(&xml);
     } catch (std::runtime_error& e) {
@@ -120,9 +124,6 @@ int gbrControl::HandleNewMessage()
     default:
         break;
     }
-
-    std::cout << listener->GetLastMessage() << std::endl;
-    std::cout << "From: " << listener->GetLastSender() << std::endl;
 
     return 0;
 }
