@@ -8,7 +8,13 @@
 int HandleNewMessage(const std::string newXML, gbrDatabaseHandler *db)
 {
     std::string	xml = newXML;
-    gbrXML		*xmlReader = new gbrXML(&xml);
+    gbrXML		*xmlReader;
+    try {
+       xmlReader = new gbrXML(&xml);
+    } catch (std::runtime_error& e) {
+        std::cout << e.what() << std::endl;
+        return 1;
+    }
 
     switch(xmlReader->GetType())
     {
@@ -59,7 +65,7 @@ int HandleNewMessage(const std::string newXML, gbrDatabaseHandler *db)
         break;
     }
 
-    delete xmlReader;
+    if(nullptr != xmlReader) { delete xmlReader; }
 
     return 0;
 }
@@ -78,8 +84,7 @@ int main()
     strNodeConfig =
         "<messagetype>nodeconfig</messagetype>"
         "<node>"
-            "<eui64>5385214629631229493</eui64>"
-            "<ipaddress>fd11:22:0:0:a4bc:7b95:37fc:fb50</ipaddress>"
+            "<eui64>0011deadbeefcafe</eui64>"
             "<status>2</status>"
             "<role>2</role>"
             "<groups>"
@@ -93,7 +98,7 @@ int main()
     strNodeConfig =
         "<messagetype>nodeconfig</messagetype>"
         "<node>"
-            "<eui64>5385214629631229493</eui64>"
+            "<eui64>abcdef1122334455</eui64>"
             "<status>1</status>"
             "<role>1</role>"
             "<groups>"
@@ -108,8 +113,20 @@ int main()
         "<messagetype>nodeconfig</messagetype>"
 
         "<node>"
-        "<eui64>ld</eui64>"
-        "<ipaddress>myipaddress</ipaddress>"
+        "<eui64></eui64>"
+        "<status>0</status>"
+        "<role>0</role>"
+        "<groups>"
+            "<group>0</group>"
+        "</groups>"
+        "<signal>0</signal>"
+        "</node>";
+    HandleNewMessage(strNodeConfig, db);
+
+    strNodeConfig =
+        "<messagetype>nodeconfig</messagetype>"
+
+        "<node>"
         "<status>0</status>"
         "<role>0</role>"
         "<groups>"
