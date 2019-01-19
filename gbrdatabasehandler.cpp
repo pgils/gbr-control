@@ -1,4 +1,4 @@
-﻿#include "gbrdatabasehandler.h"
+#include "gbrdatabasehandler.h"
 #include <stdexcept>
 #include <sstream>
 #include <iostream>
@@ -61,20 +61,18 @@ DBResult gbrDatabaseHandler::GetNodeConfig(NodeConfig *conf)
     sqlite3_stmt	*stmt 	= nullptr;
 
     try {
-        PrepareStatement("SELECT ipaddress, status_id, "
+        PrepareStatement("SELECT status_id, "
                          "role_id, signal_id FROM"
                          " tblNode WHERE eui64=?1", &stmt);
     } catch (const std::runtime_error&) {
         throw;
     }
-    sqlite3_bind_int64(stmt, 1, conf->eui64);
+    sqlite3_bind_text(stmt, 1, conf->eui64.c_str(), int(conf->eui64.length()), SQLITE_TRANSIENT);
     switch (sqlite3_step(stmt)) {
     case SQLITE_ROW:
-        conf->ipaddress 	= std::string(reinterpret_cast<const char*>
-                                    (sqlite3_column_text(stmt, 0)));
-        conf->status		= sqlite3_column_int(stmt, 1);
-        conf->role			= sqlite3_column_int(stmt, 2);
-        conf->signal		= sqlite3_column_int(stmt, 3);
+        conf->status		= sqlite3_column_int(stmt, 0);
+        conf->role			= sqlite3_column_int(stmt, 1);
+        conf->signal		= sqlite3_column_int(stmt, 2);
 
         GetNodeGroups(conf->eui64, &conf->groups);
 
@@ -88,7 +86,7 @@ DBResult gbrDatabaseHandler::GetNodeConfig(NodeConfig *conf)
     }
     try {
         std::string msg		= "SELECT-ing nodeconfig for eui64: ";
-        msg.append(std::to_string(conf->eui64));
+        msg.append(conf->eui64);
 
         FinalizeStatement(msg, &stmt);
     } catch (std::runtime_error&) {
@@ -98,16 +96,52 @@ DBResult gbrDatabaseHandler::GetNodeConfig(NodeConfig *conf)
     return ret;
 }
 
-int gbrDatabaseHandler::GetNodeGroups(int64_t eui64, std::vector<int> *groups)
+int gbrDatabaseHandler::GetNodeIndex(std::string eui64)
 {
+    int				eui64_id;
+    std::string		sql;
     sqlite3_stmt	*stmt	= nullptr;
 
+    sql = "SELECT eui64_id FROM tblNode WHERE eui64=?1 LIMIT 1";
+
     try {
-        PrepareStatement("SELECT group_id FROM tblGroup_node WHERE node_eui64=?1", &stmt);
+        PrepareStatement(sql, &stmt);
+    } catch (std::runtime_error&) {
+        throw;
+    }
+
+    sqlite3_bind_text(stmt, 1, eui64.c_str(), int(eui64.length()), SQLITE_TRANSIENT);
+
+    if( SQLITE_ROW == sqlite3_step(stmt) )
+    {
+        eui64_id = sqlite3_column_int(stmt, 0);
+    } else {
+        throw std::runtime_error("node does not exist: " + eui64 + " : " + sqlite3_errmsg(dbHandle));
+    }
+
+    try {
+        std::string msg = "SELECT-ing id for EUI-64: " + eui64;
+        FinalizeStatement(msg, &stmt);
+    } catch (std::runtime_error&) {
+       throw;
+    }
+
+    return eui64_id;
+}
+
+
+int gbrDatabaseHandler::GetNodeGroups(std::string eui64, std::vector<int> *groups)
+{
+    sqlite3_stmt	*stmt	= nullptr;
+    int				eui64_id;
+
+    try {
+        PrepareStatement("SELECT group_id FROM tblGroup_node WHERE eui64_id=?1", &stmt);
+        eui64_id = GetNodeIndex(eui64);
     } catch (const std::runtime_error&) {
         throw;
     }
-    sqlite3_bind_int64(stmt, 1, eui64);
+    sqlite3_bind_int(stmt, 1, eui64_id);
 
     while( SQLITE_ROW == sqlite3_step(stmt) )
     {
@@ -115,7 +149,7 @@ int gbrDatabaseHandler::GetNodeGroups(int64_t eui64, std::vector<int> *groups)
     }
     try {
         std::string msg		= "SELECT-ing groups for eui64: ";
-        msg.append(std::to_string(eui64));
+        msg.append(eui64);
 
         FinalizeStatement(msg, &stmt);
     } catch (std::runtime_error&) {
@@ -133,9 +167,9 @@ int gbrDatabaseHandler::GetSignalTargets(std::vector<NodeConfig> *configs,
     sqlite3_stmt	*stmt	= nullptr;
     ulong			i;
 
-    sql = "SELECT DISTINCT eui64,ipaddress,status_id,role_id,signal_id "
+    sql = "SELECT DISTINCT eui64,status_id,role_id,signal_id "
           "FROM tblNode INNER JOIN tblGroup_node ON "
-          "tblGroup_node.node_eui64=tblNode.eui64 WHERE tblGroup_node.group_id IN (?";
+          "tblGroup_node.eui64_id=tblNode.eui64_id WHERE tblGroup_node.group_id IN (?";
     //TODO: check if 0 < i < 999 (SQLite bind_ limit)
     for (i = 0; i < groups.size()-1; ++i) {
         sql.append(",?");
@@ -154,12 +188,10 @@ int gbrDatabaseHandler::GetSignalTargets(std::vector<NodeConfig> *configs,
     while( SQLITE_ROW == sqlite3_step(stmt) )
     {
         NodeConfig	conf;
-        conf.eui64			= sqlite3_column_int64(stmt, 0);
-        conf.ipaddress		= std::string(reinterpret_cast<const char*>
-                                          (sqlite3_column_text(stmt, 1)));
-        conf.status			= sqlite3_column_int(stmt, 2);
-        conf.role			= sqlite3_column_int(stmt, 3);
-        conf.signal			= sqlite3_column_int(stmt, 4);
+        conf.eui64			= std::string(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0)));
+        conf.status			= sqlite3_column_int(stmt, 1);
+        conf.role			= sqlite3_column_int(stmt, 2);
+        conf.signal			= sqlite3_column_int(stmt, 3);
         configs->push_back(conf);
     }
     try {
@@ -178,7 +210,7 @@ int gbrDatabaseHandler::GetActiveNodes(std::vector<NodeConfig> *configs)
     std::string		sql;
     sqlite3_stmt	*stmt	= nullptr;
 
-    sql = "SELECT eui64,ipaddress,status_id,role_id,signal_id "
+    sql = "SELECT eui64,status_id,role_id,signal_id "
           "FROM tblNode WHERE active=1";
     try {
         PrepareStatement(sql, &stmt);
@@ -188,12 +220,11 @@ int gbrDatabaseHandler::GetActiveNodes(std::vector<NodeConfig> *configs)
     while( SQLITE_ROW == sqlite3_step(stmt) )
     {
         NodeConfig	conf;
-        conf.eui64			= sqlite3_column_int64(stmt, 0);
-        conf.ipaddress		= std::string(reinterpret_cast<const char*>
-                                          (sqlite3_column_text(stmt, 1)));
-        conf.status			= sqlite3_column_int(stmt, 2);
-        conf.role			= sqlite3_column_int(stmt, 3);
-        conf.signal			= sqlite3_column_int(stmt, 4);
+        conf.eui64			= std::string(reinterpret_cast<const char*>
+                                          (sqlite3_column_text(stmt, 0)));
+        conf.status			= sqlite3_column_int(stmt, 1);
+        conf.role			= sqlite3_column_int(stmt, 2);
+        conf.signal			= sqlite3_column_int(stmt, 3);
 
         GetNodeGroups(conf.eui64, &conf.groups);
         configs->push_back(conf);
@@ -223,22 +254,21 @@ DBResult gbrDatabaseHandler::StoreNodeConfig(NodeConfig *conf)
     case DBResult::NOTFOUND:
         //TODO: always enter as uninitialized?
         try {
-            PrepareStatement("INSERT INTO tblNode (eui64, ipaddress, status_id, role_id, signal_id)"
-                            " VALUES(?1, ?2, ?4, ?5, ?6)", &stmt);
+            PrepareStatement("INSERT INTO tblNode (eui64, status_id, role_id, signal_id)"
+                            " VALUES(?1, ?2, ?3, ?4)", &stmt);
         } catch (std::runtime_error&) {
             throw;
         }
-        sqlite3_bind_int64	(stmt, 1, conf->eui64);
-        sqlite3_bind_text	(stmt, 2, conf->ipaddress.c_str(),
-                            int(conf->ipaddress.length()), SQLITE_TRANSIENT);
-        sqlite3_bind_int	(stmt, 4, conf->status);
-        sqlite3_bind_int	(stmt, 5, conf->role);
-        sqlite3_bind_int	(stmt, 6, conf->signal);
+        sqlite3_bind_text	(stmt, 1, conf->eui64.c_str(),
+                            int(conf->eui64.length()), SQLITE_TRANSIENT);
+        sqlite3_bind_int	(stmt, 2, conf->status);
+        sqlite3_bind_int	(stmt, 3, conf->role);
+        sqlite3_bind_int	(stmt, 4, conf->signal);
 
         sqlite3_step(stmt);
         try {
             std::string msg		= "INSERT-ing node: ";
-            msg.append(std::to_string(conf->eui64));
+            msg.append(conf->eui64);
 
             FinalizeStatement(msg, &stmt);
         } catch (std::runtime_error&) {
@@ -262,12 +292,6 @@ DBResult gbrDatabaseHandler::StoreNodeConfig(NodeConfig *conf)
     {
         std::ostringstream sql;
         sql << "UPDATE tblNode SET ";
-        // IP-address isn't a mandatory element. (GUI doesn't send ip-addresses)
-        // so only update it if one is provided.
-        if( 0 < tmpConf.ipaddress.length() )
-        {
-            sql << "ipaddress=?1, ";
-        }
         sql << "status_id=?2, role_id=?3, signal_id=?4 ";
         sql << "WHERE eui64=?5";
 
@@ -276,16 +300,15 @@ DBResult gbrDatabaseHandler::StoreNodeConfig(NodeConfig *conf)
         } catch (const std::runtime_error&) {
             throw;
         }
-        sqlite3_bind_text(stmt, 1, tmpConf.ipaddress.c_str(),
-                int(tmpConf.ipaddress.length()), SQLITE_TRANSIENT);
+        sqlite3_bind_text(stmt, 5, tmpConf.eui64.c_str(),
+                int(tmpConf.eui64.length()), SQLITE_TRANSIENT);
         sqlite3_bind_int(stmt, 2, tmpConf.status);
         sqlite3_bind_int(stmt, 3, tmpConf.role);
         sqlite3_bind_int(stmt, 4, tmpConf.signal);
-        sqlite3_bind_int64(stmt, 5, tmpConf.eui64);
         sqlite3_step(stmt);
         try {
             std::string msg		= "UPDATE-ing node: ";
-            msg.append(std::to_string(tmpConf.eui64));
+            msg.append(tmpConf.eui64);
 
             FinalizeStatement(msg, &stmt);
         } catch (std::runtime_error&) {
@@ -302,7 +325,7 @@ DBResult gbrDatabaseHandler::StoreNodeConfig(NodeConfig *conf)
         return ret;
 }
 
-int gbrDatabaseHandler::DeleteNode(int64_t eui64)
+int gbrDatabaseHandler::DeleteNode(std::string eui64)
 {
     sqlite3_stmt	*stmt	= nullptr;
 
@@ -311,12 +334,12 @@ int gbrDatabaseHandler::DeleteNode(int64_t eui64)
     } catch (std::runtime_error&) {
         throw;
     }
-    sqlite3_bind_int64(stmt, 1, eui64);
+    sqlite3_bind_text(stmt, 1, eui64.c_str(), int(eui64.length()), SQLITE_TRANSIENT);
 
     sqlite3_step(stmt);
     try {
         std::string msg		= "DELETE-ing node: ";
-        msg.append(std::to_string(eui64));
+        msg.append(eui64);
 
         FinalizeStatement(msg, &stmt);
     } catch (std::runtime_error&) {
@@ -332,7 +355,7 @@ int gbrDatabaseHandler::CreateGroup(int group, bool remove)
     sqlite3_stmt	*stmt	= nullptr;
 
     sql = remove ? "DELETE FROM tblGroup WHERE group_id=?1"
-                 : "INSERT OR IGNORE INTO tblGroup (group_id, groupname) VALUES (?1, ?1)";
+                 : "INSERT OR IGNORE INTO tblGroup (group_id) VALUES (?1)";
 
     try {
         PrepareStatement(sql, &stmt);
@@ -360,27 +383,30 @@ int gbrDatabaseHandler::RemoveGroup(int group)
     return CreateGroup(group, true);
 }
 
-int gbrDatabaseHandler::AddNodeToGroup(int64_t eui64, int group, bool remove)
+
+int gbrDatabaseHandler::AddNodeToGroup(std::string eui64, int group, bool remove)
 {
     std::string		sql;
     sqlite3_stmt	*stmt	= nullptr;
+    int				eui64_id;
 
-    sql = remove ? "DELETE FROM tblGroup_node WHERE group_id=?1 AND node_eui64=?2"
-                 : "INSERT INTO tblGroup_node (group_id, node_eui64) VALUES (?1, ?2)";
+    sql = remove ? "DELETE FROM tblGroup_node WHERE group_id=?1 AND eui64_id=?2"
+                 : "INSERT INTO tblGroup_node (group_id, eui64_id) VALUES (?1, ?2)";
 
     try {
         PrepareStatement(sql, &stmt);
+        eui64_id = GetNodeIndex(eui64);
     } catch (std::runtime_error&) {
         throw;
     }
     sqlite3_bind_int(stmt, 1, group);
-    sqlite3_bind_int64(stmt, 2, eui64);
+    sqlite3_bind_int(stmt, 2, eui64_id);
 
     sqlite3_step(stmt);
     try {
         std::string msg = remove ? "DELETE-ing" : "INSERT-ing";
         msg.append(" node: ");
-        msg.append(std::to_string(eui64));
+        msg.append(eui64);
         msg.append(" to group: ");
         msg.append(std::to_string(group));
 
@@ -391,29 +417,31 @@ int gbrDatabaseHandler::AddNodeToGroup(int64_t eui64, int group, bool remove)
 
     return 0;
 }
-int gbrDatabaseHandler::RemoveNodeFromGroup(int64_t eui64, int group)
+int gbrDatabaseHandler::RemoveNodeFromGroup(std::string eui64, int group)
 {
     return AddNodeToGroup(eui64, group, true);
 }
 
-int gbrDatabaseHandler::RemoveNodeFromAllGroups(int64_t eui64)
+int gbrDatabaseHandler::RemoveNodeFromAllGroups(std::string eui64)
 {
     std::string		sql;
     sqlite3_stmt	*stmt	= nullptr;
+    int				eui64_id;
 
-    sql 		= "DELETE FROM tblGroup_node WHERE node_eui64=?1";
+    sql 		= "DELETE FROM tblGroup_node WHERE eui64_id=?1";
 
     try {
         PrepareStatement(sql, &stmt);
+        eui64_id = GetNodeIndex(eui64);
     } catch (std::runtime_error&) {
         throw;
     }
-    sqlite3_bind_int64(stmt, 1, eui64);
+    sqlite3_bind_int(stmt, 1, eui64_id);
 
     sqlite3_step(stmt);
     try {
         std::string msg = "DELETE-ing from all groups: ";
-        msg.append(std::to_string(eui64));
+        msg.append(eui64);
 
         FinalizeStatement(msg, &stmt);
     } catch (std::runtime_error&) {

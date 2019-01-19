@@ -40,13 +40,14 @@ private:
 public:
     DBResult StoreNodeConfig(NodeConfig *conf);
     DBResult GetNodeConfig(NodeConfig *conf);
-    int GetNodeGroups(int64_t eui64, std::vector<int> *groups);
-    int DeleteNode(int64_t eui64);
+    int GetNodeIndex(std::string eui64);
+    int GetNodeGroups(std::string eui64, std::vector<int> *groups);
+    int DeleteNode(std::string eui64);
     int CreateGroup(int group, bool remove = false);
     int RemoveGroup(int group);
-    int AddNodeToGroup(int64_t eui64, int group, bool remove = false);
-    int RemoveNodeFromGroup(int64_t eui64, int group);
-    int RemoveNodeFromAllGroups(int64_t eui64);
+    int AddNodeToGroup(std::string eui64, int group, bool remove = false);
+    int RemoveNodeFromGroup(std::string eui64, int group);
+    int RemoveNodeFromAllGroups(std::string eui64);
     int GetSignalTargets(std::vector<NodeConfig> *configs, std::vector<int> groups);
     int GetActiveNodes(std::vector<NodeConfig> *configs);
 

@@ -171,7 +171,7 @@ int gbrXML::GetXMLNodeElement(XMLHandle *handle, NodeConfig *config)
 {
     // Get the EUI-64 directly, as it is stored in string format.
     XMLElement *eui64Element		= handle->FirstChildElement("eui64").ToElement();
-    if( eui64Element )
+    if( nullptr != eui64Element && eui64Element->GetText() )
     {
         config->eui64	= eui64Element->GetText();
     } else {

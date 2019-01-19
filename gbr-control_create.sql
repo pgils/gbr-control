@@ -14,8 +14,8 @@ CREATE TABLE tblSignal (
 );
 
 CREATE TABLE tblNode (
-    eui64       INTEGER PRIMARY KEY,
-    ipaddress   TEXT NOT NULL,
+    eui64_id    INTEGER PRIMARY KEY,
+    eui64       TEXT NOT NULL,
     active      INTEGER DEFAULT 0,
     status_id   INTEGER NOT NULL,
     role_id     INTEGER NOT NULL,
@@ -29,18 +29,17 @@ CREATE TABLE tblNode (
 );
 
 CREATE TABLE tblGroup (
-    group_id    INTEGER PRIMARY KEY,
-    groupname   TEXT NOT NULL UNIQUE
+    group_id    INTEGER PRIMARY KEY
 );
 
 CREATE TABLE tblGroup_node (
     group_id    INTEGER,
-    node_eui64  INTEGER,
+    eui64_id    INTEGER,
     FOREIGN KEY (group_id) REFERENCES tblGroup (group_id)
     ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY (node_eui64) REFERENCES tblNode (eui64)
+    FOREIGN KEY (eui64_id) REFERENCES tblNode (eui64_id)
     ON DELETE CASCADE ON UPDATE CASCADE,
-    PRIMARY KEY (group_id, node_eui64)
+    PRIMARY KEY (group_id, eui64_id)
 );
 
 INSERT INTO tblStatus (statusdesc)
@@ -51,10 +50,6 @@ INSERT INTO tblRole (rolename)
 VALUES
 ('actuator'), ('sensor');
 
-INSERT INTO tblGroup (groupname)
-VALUES
-('A'), ('B'), ('C'), ('D'), ('E'), ('F');
-
 INSERT INTO tblSignal (signalname)
 VALUES
-('on'), ('off'), ('blink');
+('none'), ('off'), ('red'), ('green'), ('blue');
