@@ -8,9 +8,9 @@
 int HandleNewMessage(const std::string newXML, gbrDatabaseHandler *db)
 {
     std::string	xml = newXML;
-    gbrXML		xmlReader(&xml);
+    gbrXML		*xmlReader = new gbrXML(&xml);
 
-    switch(xmlReader.GetType())
+    switch(xmlReader->GetType())
     {
     case gbrXMLMessageType::GETCONFIGS:
     {
@@ -29,7 +29,7 @@ int HandleNewMessage(const std::string newXML, gbrDatabaseHandler *db)
     }
     case gbrXMLMessageType::SETCONFIGS:
     {
-        for( NodeConfig newConfig : *xmlReader.GetNodeConfigs() )
+        for( NodeConfig newConfig : *xmlReader->GetNodeConfigs() )
         {
             try {
                 db->StoreNodeConfig(&newConfig);
@@ -43,7 +43,7 @@ int HandleNewMessage(const std::string newXML, gbrDatabaseHandler *db)
     case gbrXMLMessageType::NODECONFIG:
     {
         try {
-            db->StoreNodeConfig(xmlReader.GetNodeConfig());
+            db->StoreNodeConfig(xmlReader->GetNodeConfig());
         } catch (std::runtime_error& e) {
             std::cout << e.what() << std::endl;
             return 1;
@@ -52,12 +52,14 @@ int HandleNewMessage(const std::string newXML, gbrDatabaseHandler *db)
     }
     case gbrXMLMessageType::SENDSIGNAL:
     {
-        gbrXML xmlGenerator(xmlReader.GetSignal());
+        gbrXML xmlGenerator(xmlReader->GetSignal());
         break;
     }
     default:
         break;
     }
+
+    delete xmlReader;
 
     return 0;
 }
@@ -99,6 +101,21 @@ int main()
                 "<group>5</group>"
             "</groups>"
             "<signal>3</signal>"
+        "</node>";
+    HandleNewMessage(strNodeConfig, db);
+
+    strNodeConfig =
+        "<messagetype>nodeconfig</messagetype>"
+
+        "<node>"
+        "<eui64>ld</eui64>"
+        "<ipaddress>myipaddress</ipaddress>"
+        "<status>0</status>"
+        "<role>0</role>"
+        "<groups>"
+            "<group>0</group>"
+        "</groups>"
+        "<signal>0</signal>"
         "</node>";
     HandleNewMessage(strNodeConfig, db);
 
