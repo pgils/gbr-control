@@ -23,7 +23,6 @@ public:
     int SendMultiCast(std::string *message);
     int SendLocal(std::string *message);
     std::string GetLastMessage() const;
-    std::string GetLastSender() const;
 
 private:
     struct sockaddr_in6	receiverSi;
@@ -33,7 +32,6 @@ private:
     socklen_t			rlen;
 
     std::string			mLastMessage;
-    std::string			mLastSender;
 };
 
 #endif // GBRSOCKETLISTENER_H

@@ -64,7 +64,6 @@ int gbrControl::HandleNewMessage()
     gbrXML		*xmlReader;
 
     std::cout << listener->GetLastMessage() << std::endl;
-    std::cout << "From: " << listener->GetLastSender() << std::endl;
 
     try {
         xmlReader = new gbrXML(&xml);

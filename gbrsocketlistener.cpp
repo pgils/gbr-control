@@ -93,7 +93,6 @@ long gbrSocketListener::ListenForMessage()
 {
     long	bytesReceived;
     char	messageBuf[BUFLEN];
-    char	remoteBuf[INET6_ADDRSTRLEN];
 
     bytesReceived = recvfrom(this->sock, messageBuf, BUFLEN, 0,
                              reinterpret_cast<struct sockaddr*>(&this->remoteSi),
@@ -106,12 +105,8 @@ long gbrSocketListener::ListenForMessage()
     }
     else if( 0 < bytesReceived )
     {
-        //Get the sender's IP-address
-        inet_ntop(AF_INET6, &this->remoteSi.sin6_addr, remoteBuf, sizeof(this->remoteSi));
-
         messageBuf[bytesReceived] = '\0';
         this->mLastMessage	= messageBuf;
-        this->mLastSender	= remoteBuf;
     }
 
     return bytesReceived;
@@ -144,7 +139,3 @@ std::string gbrSocketListener::GetLastMessage() const
     return this->mLastMessage;
 }
 
-std::string gbrSocketListener::GetLastSender() const
-{
-    return this->mLastSender;
-}
