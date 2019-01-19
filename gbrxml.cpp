@@ -1,7 +1,7 @@
 #include "gbrxml.h"
 #include <iostream>
 #include <tinyxml2.h>
-#include <cstring>
+#include <string>
 #include <stdexcept>
 
 using namespace tinyxml2;
@@ -64,8 +64,7 @@ int gbrXML::AddXMLElement(XMLPrinter *printer, const char* element, T value)
 int gbrXML::NodeConfigToXML(tinyxml2::XMLPrinter *printer, NodeConfig *conf)
 {
     printer->OpenElement("node", XML_COMPACT);
-    AddXMLElement(printer, "eui64", conf->eui64);
-    AddXMLElement(printer, "ipaddress", conf->ipaddress.c_str());
+    AddXMLElement(printer, "eui64", conf->eui64.c_str());
     AddXMLElement(printer, "status", conf->status);
     AddXMLElement(printer, "role", conf->role);
     if( 0 < conf->groups.size() )
@@ -170,20 +169,21 @@ int gbrXML::GetXMLGroupElement(XMLHandle *handle, std::vector<int> *target)
 
 int gbrXML::GetXMLNodeElement(XMLHandle *handle, NodeConfig *config)
 {
+    // Get the EUI-64 directly, as it is stored in string format.
+    XMLElement *eui64Element		= handle->FirstChildElement("eui64").ToElement();
+    if( eui64Element )
+    {
+        config->eui64	= eui64Element->GetText();
+    } else {
+        throw std::runtime_error("no EUI-64 element found.");
+    }
+
     try {
-        GetXMLElementValue(handle, "eui64", 	&XMLElement::QueryInt64Text, 	&config->eui64);
         GetXMLElementValue(handle, "status", 	&XMLElement::QueryIntText, 		&config->status);
         GetXMLElementValue(handle, "role", 		&XMLElement::QueryIntText, 		&config->role);
         GetXMLElementValue(handle, "signal", 	&XMLElement::QueryIntText, 		&config->signal);
     } catch (std::runtime_error&) {
         throw;
-    }
-
-    // Get the ip-adress directly, as it is stored in string format.
-    XMLElement *ipElement		= handle->FirstChildElement("ipaddress").ToElement();
-    if( ipElement )
-    {
-        config->ipaddress	= ipElement->GetText();
     }
 
     GetXMLGroupElement(handle, &config->groups);

@@ -29,8 +29,7 @@ enum class gbrXMLMessageType
 
 struct NodeConfig
 {
-    int64_t				eui64;
-    std::string 		ipaddress;
+    std::string			eui64;
     int					active;
     int					status;
     std::vector<int>	groups;
@@ -42,7 +41,6 @@ struct NodeConfig
     {
         return (
             c.eui64		== eui64 &&
-            c.ipaddress == ipaddress &&
             c.status	== status &&
             c.groups	== groups &&
             c.role		== role &&
