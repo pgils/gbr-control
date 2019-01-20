@@ -15,11 +15,11 @@ CREATE TABLE tblSignal (
 
 CREATE TABLE tblNode (
     eui64_id    INTEGER PRIMARY KEY,
-    eui64       TEXT NOT NULL,
-    active      INTEGER DEFAULT 0,
-    status_id   INTEGER NOT NULL,
-    role_id     INTEGER NOT NULL,
-    signal_id   INTEGER DEFAULT 0,
+    eui64       TEXT    NOT NULL UNIQUE,
+    active      INTEGER NOT NULL DEFAULT 0,
+    status_id   INTEGER NOT NULL DEFAULT 1,
+    role_id     INTEGER NOT NULL DEFAULT 1,
+    signal_id   INTEGER NOT NULL DEFAULT 1,
     FOREIGN KEY (status_id) REFERENCES tblStatus (status_id)
     ON DELETE NO ACTION ON UPDATE CASCADE,
     FOREIGN KEY (role_id) REFERENCES tblRole (role_id)
