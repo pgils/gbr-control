@@ -146,6 +146,9 @@ int gbrXML::GetXMLGroupElement(XMLHandle *handle, std::vector<int> *target)
 {
     int 		group;
 
+    // Clear the vector first
+    target->clear();
+
     // Get the first group number
     XMLElement *groupElement = handle->FirstChildElement("groups").FirstChildElement("group").ToElement();
     if( groupElement )
