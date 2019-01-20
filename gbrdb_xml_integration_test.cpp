@@ -111,6 +111,21 @@ int main()
 
     strNodeConfig =
         "<messagetype>nodeconfig</messagetype>"
+        "<node>"
+            "<eui64>abcdef1122334455</eui64>"
+            "<status>1</status>"
+            "<role>1</role>"
+            "<groups>"
+                "<group>4</group>"
+                "<group>5</group>"
+                "<group>7</group>"
+            "</groups>"
+            "<signal>3</signal>"
+        "</node>";
+    HandleNewMessage(strNodeConfig, db);
+
+    strNodeConfig =
+        "<messagetype>nodeconfig</messagetype>"
 
         "<node>"
         "<eui64></eui64>"
