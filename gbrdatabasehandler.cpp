@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <sstream>
 #include <iostream>
+#include <ctime>
 
 gbrDatabaseHandler::gbrDatabaseHandler(const char* dbfile)
 {
@@ -143,6 +144,8 @@ int gbrDatabaseHandler::GetNodeGroups(std::string eui64, std::vector<int> *group
     }
     sqlite3_bind_int(stmt, 1, eui64_id);
 
+    // clear the vector first, to prevent duplicates.
+    groups->clear();
     while( SQLITE_ROW == sqlite3_step(stmt) )
     {
         groups->push_back(sqlite3_column_int(stmt, 0));
@@ -211,12 +214,14 @@ int gbrDatabaseHandler::GetActiveNodes(std::vector<NodeConfig> *configs)
     sqlite3_stmt	*stmt	= nullptr;
 
     sql = "SELECT eui64,status_id,role_id,signal_id "
-          "FROM tblNode WHERE active=1";
+          "FROM tblNode WHERE lastseen > ?1";
     try {
         PrepareStatement(sql, &stmt);
     } catch (const std::runtime_error&) {
         throw;
     }
+    sqlite3_bind_int64(stmt, 1, time(nullptr));
+
     while( SQLITE_ROW == sqlite3_step(stmt) )
     {
         NodeConfig	conf;
@@ -240,7 +245,6 @@ int gbrDatabaseHandler::GetActiveNodes(std::vector<NodeConfig> *configs)
     return 0;
 }
 
-// TODO: remember to set active before calling this
 DBResult gbrDatabaseHandler::StoreNodeConfig(NodeConfig *conf)
 {
     DBResult		ret		= DBResult::NOOP;
@@ -324,6 +328,50 @@ DBResult gbrDatabaseHandler::StoreNodeConfig(NodeConfig *conf)
         }
     }
         return ret;
+}
+
+int gbrDatabaseHandler::TimeoutNodes()
+{
+    sqlite3_stmt	*stmt	= nullptr;
+
+    try {
+        PrepareStatement("UPDATE tblNode SET status_id=1 WHERE lastseen < ?2", &stmt);
+    } catch (std::runtime_error&) {
+        throw;
+    }
+    sqlite3_bind_int64(stmt, 2, time(nullptr)-NODE_TIMEOUT);
+
+    sqlite3_step(stmt);
+
+    try {
+        FinalizeStatement("Timing out nodes.", &stmt);
+    } catch (std::runtime_error&) {
+        throw;
+    }
+
+    return 0;
+}
+
+int gbrDatabaseHandler::SetNodeLastSeen(NodeConfig *conf)
+{
+    sqlite3_stmt	*stmt	= nullptr;
+
+    try {
+        PrepareStatement("UPDATE tblNode SET lastseen=?1 WHERE eui64=?2", &stmt);
+    } catch (std::runtime_error&) {
+        throw;
+    }
+    sqlite3_bind_text(stmt, 2, conf->eui64.c_str(), int(conf->eui64.length()), SQLITE_TRANSIENT);
+    sqlite3_bind_int64(stmt, 1, time(nullptr));
+
+    sqlite3_step(stmt);
+    try {
+        FinalizeStatement("UPDATE-ing `lastseen` for eui64: " + conf->eui64, &stmt);
+    } catch (std::runtime_error&) {
+        throw;
+    }
+
+    return 0;
 }
 
 int gbrDatabaseHandler::DeleteNode(std::string eui64)

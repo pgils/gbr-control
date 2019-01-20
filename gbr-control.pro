@@ -19,7 +19,8 @@ HEADERS += \
 
 LIBS +=  \
     -ltinyxml2 \
-    -lsqlite3
+    -lsqlite3  \
+    -lpthread
 
 DISTFILES += \
     gbr-control_create.sql

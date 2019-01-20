@@ -1,6 +1,8 @@
 #include "gbrcontrol.h"
 #include <stdexcept>
 #include <iostream>
+#include <thread>
+#include <chrono>
 #include <csignal>
 #include <cassert>
 
@@ -26,19 +28,13 @@ gbrControl::~gbrControl()
 
 int gbrControl::Run()
 {
+    long			messageLength = 0;
+    std::thread		*pollThread;
+
     std::cout << "Starting gbrControl." << std::endl;
     running = true;
 
-    // Build and multicast a request for info/config of the active nodes
-    // in the mesh network.
-    gbrXMLMessageType	initMessage	= gbrXMLMessageType::GETNODECONFIG;
-    gbrXML				*getNodeXml	= new gbrXML(&initMessage);
-
-    std::cout << "Requesting configuration from active nodes in the network." << std::endl;
-    listener->SendMultiCast(getNodeXml->GetXML());
-    delete getNodeXml;
-
-    long				messageLength = 0;
+    pollThread		= new std::thread([this] { PollNetwork(); });
 
     while (running) {
         try {
@@ -52,6 +48,9 @@ int gbrControl::Run()
             HandleNewMessage();
         }
     }
+
+    pollThread->join();
+    delete pollThread;
 
     std::cout << "Stopped" << std::endl;
 
@@ -86,6 +85,7 @@ int gbrControl::HandleNewMessage()
             db->GetActiveNodes(&configs);
         } catch (std::runtime_error& e) {
             std::cout << e.what() << std::endl;
+            delete xmlReader;
             return 1;
         }
         gbrXML xmlGenerator(&configs);
@@ -111,19 +111,31 @@ int gbrControl::HandleNewMessage()
                 }
             } catch (std::runtime_error& e) {
                 std::cout << e.what() << std::endl;
-                return 1;
             }
         }
         break;
     }
     case gbrXMLMessageType::NODECONFIG:
     {
-        std::cout << "Received config from: " << xmlReader->GetNodeConfig()->eui64 << std::endl;
+        std::cout << "Received heartbeat from: " << xmlReader->GetNodeConfig()->eui64 << std::endl;
         try {
-            db->StoreNodeConfig(xmlReader->GetNodeConfig());
+            NodeConfig tmpConf = *xmlReader->GetNodeConfig();
+            if(DBResult::OK == db->GetNodeConfig(&tmpConf))
+            {
+                db->SetNodeLastSeen(xmlReader->GetNodeConfig());
+                if( !(tmpConf == *xmlReader->GetNodeConfig()))
+                {
+                    std::cout << "Sending node: " << xmlReader->GetNodeConfig()->eui64 << " it's known config." << std::endl;
+                    gbrXML xmlGenerator(&tmpConf);
+                    listener->SendMultiCast(xmlGenerator.GetXML());
+                }
+            } else {
+                std::cout << "Adding new node: " << xmlReader->GetNodeConfig()->eui64 << std::endl;
+                db->StoreNodeConfig(xmlReader->GetNodeConfig());
+                db->SetNodeLastSeen(xmlReader->GetNodeConfig());
+            }
         } catch (std::runtime_error& e) {
             std::cout << e.what() << std::endl;
-            return 1;
         }
         break;
     }
@@ -142,6 +154,25 @@ int gbrControl::HandleNewMessage()
     return 0;
 }
 
+
+// Build and multicast a request for info/config of the active nodes
+// in the mesh network.
+void gbrControl::PollNetwork()
+{
+    while(running)
+    {
+        gbrXMLMessageType	initMessage	= gbrXMLMessageType::GETNODECONFIG;
+        gbrXML				*getNodeXml	= new gbrXML(&initMessage);
+
+        std::cout << "Requesting configuration from active nodes in the network." << std::endl;
+        listener->SendMultiCast(getNodeXml->GetXML());
+        delete getNodeXml;
+
+        std::this_thread::sleep_for(std::chrono::seconds(POLL_INTERVAL));
+
+        db->TimeoutNodes();
+    }
+}
 
 void gbrControl::Stop()
 {

@@ -30,13 +30,11 @@ enum class gbrXMLMessageType
 struct NodeConfig
 {
     std::string			eui64;
-    int					active;
     int					status;
     std::vector<int>	groups;
     int					role;
     int					signal;
 
-    //TODO: improve `groups` comparison. (it seems to not work at all this way)
     bool operator==(const NodeConfig& c) const
     {
         return (
@@ -46,6 +44,7 @@ struct NodeConfig
             c.role		== role &&
             c.signal	== signal);
     }
+
 };
 
 struct Signal

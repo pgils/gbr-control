@@ -5,6 +5,8 @@
 #include "gbrdatabasehandler.h"
 #include "gbrsocketlistener.h"
 
+#define		POLL_INTERVAL	30	// network poll interval in seconds
+
 class gbrControl
 {
 public:
@@ -25,6 +27,7 @@ private:
     gbrSocketListener	*listener;
 
     int HandleNewMessage();
+    void PollNetwork();
 };
 
 extern gbrControl *gbrcontrol;
