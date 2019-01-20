@@ -245,9 +245,9 @@ DBResult gbrDatabaseHandler::StoreNodeConfig(NodeConfig *conf)
 {
     DBResult		ret		= DBResult::NOOP;
     sqlite3_stmt	*stmt 	= nullptr;
-    NodeConfig		tmpConf = *conf;
+    NodeConfig		tmpConf	= *conf;
 
-    switch (GetNodeConfig(conf)) {
+    switch (GetNodeConfig(&tmpConf)) {
     case DBResult::OK:
         ret					= ( tmpConf == *conf ) ? DBResult::NOCHANGE : DBResult::UPDATED;
     break;
@@ -275,6 +275,7 @@ DBResult gbrDatabaseHandler::StoreNodeConfig(NodeConfig *conf)
             throw;
         }
 
+        RemoveNodeFromAllGroups(conf->eui64);
         for( int group : conf->groups )
         {
             CreateGroup(group);
@@ -300,28 +301,28 @@ DBResult gbrDatabaseHandler::StoreNodeConfig(NodeConfig *conf)
         } catch (const std::runtime_error&) {
             throw;
         }
-        sqlite3_bind_text(stmt, 5, tmpConf.eui64.c_str(),
-                int(tmpConf.eui64.length()), SQLITE_TRANSIENT);
-        sqlite3_bind_int(stmt, 2, tmpConf.status);
-        sqlite3_bind_int(stmt, 3, tmpConf.role);
-        sqlite3_bind_int(stmt, 4, tmpConf.signal);
+        sqlite3_bind_text(stmt, 5, conf->eui64.c_str(),
+                int(conf->eui64.length()), SQLITE_TRANSIENT);
+        sqlite3_bind_int(stmt, 2, conf->status);
+        sqlite3_bind_int(stmt, 3, conf->role);
+        sqlite3_bind_int(stmt, 4, conf->signal);
         sqlite3_step(stmt);
         try {
             std::string msg		= "UPDATE-ing node: ";
-            msg.append(tmpConf.eui64);
+            msg.append(conf->eui64);
 
             FinalizeStatement(msg, &stmt);
         } catch (std::runtime_error&) {
             throw;
         }
 
-        RemoveNodeFromAllGroups(tmpConf.eui64);
-        for( int group : tmpConf.groups )
+        RemoveNodeFromAllGroups(conf->eui64);
+        for( int group : conf->groups )
         {
             CreateGroup(group);
-            AddNodeToGroup(tmpConf.eui64, group);
+            AddNodeToGroup(conf->eui64, group);
         }
-        }
+    }
         return ret;
 }
 
