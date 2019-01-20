@@ -36,7 +36,7 @@ struct NodeConfig
     int					role;
     int					signal;
 
-    //TODO: should we comapre `groups` as well?
+    //TODO: improve `groups` comparison. (it seems to not work at all this way)
     bool operator==(const NodeConfig& c) const
     {
         return (
@@ -77,7 +77,6 @@ private:
         { gbrXMLMessageType::NODECONFIGS	, "nodeconfigs"		},
         { gbrXMLMessageType::SETCONFIGS		, "setconfigs"		},
         { gbrXMLMessageType::SENDSIGNAL		, "sendsignal"		},
-//        { gbrXMLMessageType::CONFIG			, "config"			},
         { gbrXMLMessageType::SIGNAL			, "signal"			},
         { gbrXMLMessageType::GETNODECONFIG	, "getnodeconfig"	},
         { gbrXMLMessageType::NODECONFIG		, "nodeconfig"		}
