@@ -143,6 +143,8 @@ int gbrDatabaseHandler::GetNodeGroups(std::string eui64, std::vector<int> *group
     }
     sqlite3_bind_int(stmt, 1, eui64_id);
 
+    // clear the vector first, to prevent duplicates.
+    groups->clear();
     while( SQLITE_ROW == sqlite3_step(stmt) )
     {
         groups->push_back(sqlite3_column_int(stmt, 0));

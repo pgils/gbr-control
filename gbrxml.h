@@ -36,7 +36,6 @@ struct NodeConfig
     int					role;
     int					signal;
 
-    //TODO: improve `groups` comparison. (it seems to not work at all this way)
     bool operator==(const NodeConfig& c) const
     {
         return (
