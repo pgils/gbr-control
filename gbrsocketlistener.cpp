@@ -56,7 +56,7 @@ gbrSocketListener::gbrSocketListener(unsigned short port)
     // Set receive timeout for the socket.
     // This way the gbrControl can be stopped cleanly if running as a daemon.
     struct timeval tv;
-    tv.tv_sec	= 5;
+    tv.tv_sec	= SOCKET_TIMEO;
     tv.tv_usec	= 0;
     if( -1 == setsockopt(this->sock, SOL_SOCKET, SO_RCVTIMEO,
             reinterpret_cast<const char*>(&tv), sizeof(tv)))

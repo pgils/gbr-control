@@ -6,9 +6,8 @@
 #include <vector>
 #include <string>
 #include "gbrxml.h"
-//TODO: MUTEX?
-//TODO: recursion
-//TODO: does the add/remove group work?
+
+#define		NODE_TIMEOUT	100	// timeout is seconds
 
 enum class DBResult
 {
@@ -40,6 +39,8 @@ private:
 public:
     DBResult StoreNodeConfig(NodeConfig *conf);
     DBResult GetNodeConfig(NodeConfig *conf);
+    int SetNodeLastSeen(NodeConfig *conf);
+    int TimeoutNodes();
     int GetNodeIndex(std::string eui64);
     int GetNodeGroups(std::string eui64, std::vector<int> *groups);
     int DeleteNode(std::string eui64);

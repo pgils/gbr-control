@@ -30,7 +30,6 @@ enum class gbrXMLMessageType
 struct NodeConfig
 {
     std::string			eui64;
-    int					active;
     int					status;
     std::vector<int>	groups;
     int					role;
@@ -45,6 +44,7 @@ struct NodeConfig
             c.role		== role &&
             c.signal	== signal);
     }
+
 };
 
 struct Signal

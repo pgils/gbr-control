@@ -5,7 +5,8 @@
 #include <sys/socket.h>
 #include <string>
 
-#define BUFLEN	65536
+#define		SOCKET_TIMEO	5		// socket timeout in seconds
+#define		BUFLEN			65536	// buffer length in bytes
 
 class gbrSocketListener
 {
