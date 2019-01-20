@@ -34,6 +34,7 @@ int gbrControl::Run()
     gbrXMLMessageType	initMessage	= gbrXMLMessageType::GETNODECONFIG;
     gbrXML				*getNodeXml	= new gbrXML(&initMessage);
 
+    std::cout << "Requesting configuration from active nodes in the network." << std::endl;
     listener->SendMultiCast(getNodeXml->GetXML());
     delete getNodeXml;
 
@@ -63,13 +64,13 @@ int gbrControl::HandleNewMessage()
     std::string	xml = listener->GetLastMessage();
     gbrXML		*xmlReader;
 
-    std::cout << listener->GetLastMessage() << std::endl;
+    std::cout << "Received:" << std::endl << listener->GetLastMessage() << std::endl;
 
     try {
         xmlReader = new gbrXML(&xml);
     } catch (std::runtime_error& e) {
         std::cout << e.what() << std::endl;
-        return 0;
+        return 1;
     }
 
     switch(xmlReader->GetType())
@@ -79,6 +80,8 @@ int gbrControl::HandleNewMessage()
         std::vector<NodeConfig>	configs;
         std::string				xml;
 
+        std::cout << "Preparing to send active node configs." << std::endl;
+
         try {
             db->GetActiveNodes(&configs);
         } catch (std::runtime_error& e) {
@@ -87,16 +90,25 @@ int gbrControl::HandleNewMessage()
         }
         gbrXML xmlGenerator(&configs);
 
+        std::cout << "Sending active node configs." << std::endl;
         listener->SendLocal(xmlGenerator.GetXML());
 
         break;
     }
     case gbrXMLMessageType::SETCONFIGS:
     {
+        std::cout << "Received new configs." << std::endl;
         for( NodeConfig newConfig : *xmlReader->GetNodeConfigs() )
         {
+            std::cout << "Storing new config for node: " << newConfig.eui64 << std::endl;
             try {
-                db->StoreNodeConfig(&newConfig);
+                if( DBResult::UPDATED == db->StoreNodeConfig(&newConfig) )
+                {
+                    std::cout << "Configuration for: " << newConfig.eui64 << " has changed. Sending new config." << std::endl;
+                    gbrXML xmlGenerator(&newConfig);
+                    std::cout << *xmlGenerator.GetXML() << std::endl;
+                    listener->SendMultiCast(xmlGenerator.GetXML());
+                }
             } catch (std::runtime_error& e) {
                 std::cout << e.what() << std::endl;
                 return 1;
@@ -106,6 +118,7 @@ int gbrControl::HandleNewMessage()
     }
     case gbrXMLMessageType::NODECONFIG:
     {
+        std::cout << "Received config from: " << xmlReader->GetNodeConfig()->eui64 << std::endl;
         try {
             db->StoreNodeConfig(xmlReader->GetNodeConfig());
         } catch (std::runtime_error& e) {
@@ -116,6 +129,7 @@ int gbrControl::HandleNewMessage()
     }
     case gbrXMLMessageType::SENDSIGNAL:
     {
+        std::cout << "Broadcasting signal: " << xmlReader->GetSignal()->signal << std::endl;
         gbrXML xmlGenerator(xmlReader->GetSignal());
         listener->SendMultiCast(xmlGenerator.GetXML());
         break;
