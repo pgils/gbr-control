@@ -137,6 +137,7 @@ int gbrControl::HandleNewMessage()
     default:
         break;
     }
+    delete xmlReader;
 
     return 0;
 }
@@ -178,4 +179,6 @@ int main()
     gbrcontrol->Run();
 
     delete gbrcontrol;
+
+    return 0;
 }
