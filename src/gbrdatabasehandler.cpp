@@ -97,6 +97,42 @@ DBResult gbrDatabaseHandler::GetNodeConfig(NodeConfig *conf)
     return ret;
 }
 
+int gbrDatabaseHandler::GetNodeConfigs(std::vector<NodeConfig> *configs)
+{
+    std::string		sql;
+    sqlite3_stmt	*stmt	= nullptr;
+
+    sql = "SELECT eui64, status_id, role_id, signal_id FROM tblNode";
+
+    try {
+        PrepareStatement(sql, &stmt);
+    } catch (std::runtime_error&) {
+        throw;
+    }
+
+    while( SQLITE_ROW == sqlite3_step(stmt) )
+    {
+        NodeConfig conf;
+        conf.eui64      = std::string(reinterpret_cast<const char*>
+                                      (sqlite3_column_text(stmt, 0)));
+        conf.status     = sqlite3_column_int(stmt, 1);
+        conf.role       = sqlite3_column_int(stmt, 2);
+        conf.signal     = sqlite3_column_int(stmt, 3);
+        GetNodeGroups(conf.eui64, &conf.groups);
+
+        configs->push_back(conf);
+    }
+
+    try {
+        std::string msg = "SELECT-ing all NodeConfigs";
+        FinalizeStatement(msg, &stmt);
+    } catch (std::runtime_error&) {
+       throw;
+    }
+
+    return 0;
+}
+
 int gbrDatabaseHandler::GetNodeIndex(std::string eui64)
 {
     int				eui64_id;

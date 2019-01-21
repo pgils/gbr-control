@@ -39,6 +39,7 @@ private:
 public:
     DBResult StoreNodeConfig(NodeConfig *conf);
     DBResult GetNodeConfig(NodeConfig *conf);
+    int GetNodeConfigs(std::vector<NodeConfig> *configs);
     int SetNodeLastSeen(NodeConfig *conf);
     int TimeoutNodes();
     int GetNodeIndex(std::string eui64);
