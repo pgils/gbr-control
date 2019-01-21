@@ -34,7 +34,7 @@ distclean: clean
 
 install: all
 	install -m 755 gbrcontrol /usr/local/sbin/
-	install -m 644 gbr-control.service /etc/systemd/system/
+	install -m 644 extra/gbr-control.service /etc/systemd/system/
 	install -m 755 extra/gbr-commission /usr/local/sbin/
-	install -m 644 gbr-commission.service /etc/systemd/system/
-	install -m 644 gbr-commission.timer /etc/systemd/system/
+	install -m 644 extra/gbr-commission.service /etc/systemd/system/
+	install -m 644 extra/gbr-commission.timer /etc/systemd/system/
