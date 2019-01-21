@@ -1,0 +1,13 @@
+[Unit]
+Description=gbr-control daemon
+After=wpantund.service otbr-agent.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/sbin/gbrcontrol
+Restart=on-failure
+RestartSec=5
+RestartPreventExitStatus=SIGKILL
+
+[Install]
+WantedBy=multi-user.target

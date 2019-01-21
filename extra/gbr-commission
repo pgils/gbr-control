@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+#
+# https://github.com/pgils/ti6-domotica/blob/master/notes/br-setup.md
+
+commState=""
+
+function SetupNetwork() {
+	wpanctl -Iwpan0 leave
+	wpanctl -Iwpan0 setprop Network:PANID 0xD000
+	wpanctl -Iwpan0 setprop Network:XPANID D0002000CAFE4444
+	wpanctl -Iwpan0 setprop Network:Key 1111222233334444DEADBEEFCAFE2019
+	wpanctl -Iwpan0 config-gateway -d "fd11:22::"
+	wpanctl -Iwpan0 setprop Network:PSKc --data 42e14f41a5772f6ca972d0324713b71e
+	wpanctl -Iwpan0 form "gdomotica"
+	sleep 5
+	wpanctl -Iwpan0 commissioner start
+}
+
+function GetCommState() {
+	commState="$(wpanctl -Iwpan0 getprop Commissioner:State | grep -oE '[^ ]+$')";
+}
+
+GetCommState
+
+# check if wpanctl failed to get the state.
+# see systemd journal for details
+if [ -z $commState ]; then
+	exit 1;
+
+elif [ $commState = "\"disabled\"" ]; then
+	echo "Setting up network.."
+	SetupNetwork
+	GetCommState
+fi
+
+if [ $commState = "\"active\"" ]; then
+	# commission our nodes for 10mins
+	echo "Commissioning.."
+	wpanctl -Iwpan0 commissioner joiner-add "*" 600 D0M001
+fi;
