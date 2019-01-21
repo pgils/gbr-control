@@ -21,13 +21,13 @@ $ sudo dpkg -i libtinyxml2-dev_7.0.0+dfsg-1_amd64.deb
 ```console
 $ git clone https://github.com/pgils/gbr-control.git
 $ cd gbr-control
-$ make install
+$ sudo make install
 $ sudo cp extra/post.php /var/www/html/
 ```
 ### Set up gbr-control
 Create the database file and enable gbr-control service files
 ```console
-$ sudo sqlite3 /var/local/gbr-control.db < extra/gbr-$ control_create.sql
+$ sudo sqlite3 /var/local/gbr-control.db < extra/gbr-control_create.sql
 $ sudo systemctl enable gbr-control.service
 $ sudo systemctl enable gbr-control.timer
 ```
