@@ -6,21 +6,20 @@ CONFIG -= qt
 CONFIG(release, debug|release): DEFINES += NDEBUG
 
 SOURCES += \
-    gbrdatabasehandler.cpp \
-    gbrxml.cpp \
-    gbrsocketlistener.cpp \
-    gbrcontrol.cpp
+    src/gbrcontrol.cpp \
+    src/gbrdatabasehandler.cpp \
+    src/gbrsocketlistener.cpp \
+    src/gbrxml.cpp
 
 HEADERS += \
-    gbrdatabasehandler.h \
-    gbrxml.h \
-    gbrsocketlistener.h \
-    gbrcontrol.h
+    include/gbrcontrol.h \
+    include/gbrdatabasehandler.h \
+    include/gbrsocketlistener.h \
+    include/gbrxml.h
+
+INCLUDEPATH += include
 
 LIBS +=  \
     -ltinyxml2 \
     -lsqlite3  \
     -lpthread
-
-DISTFILES += \
-    gbr-control_create.sql
