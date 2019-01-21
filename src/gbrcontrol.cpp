@@ -98,22 +98,38 @@ int gbrControl::HandleNewMessage()
     case gbrXMLMessageType::SETCONFIGS:
     {
         std::cout << "Received new configs." << std::endl;
-        for( NodeConfig newConfig : *xmlReader->GetNodeConfigs() )
+        std::vector<NodeConfig> knownConfigs;
+        db->GetNodeConfigs(&knownConfigs);
+        for( NodeConfig knownConf : knownConfigs )
         {
-            std::cout << "Storing new config for node: " << newConfig.eui64 << std::endl;
-            try {
-                if( DBResult::UPDATED == db->StoreNodeConfig(&newConfig) )
+            bool nodeIsDeleted = true;
+            for( NodeConfig newConf : *xmlReader->GetNodeConfigs() )
+            {
+                if( newConf.eui64 == knownConf.eui64 )
                 {
-                    std::cout << "Configuration for: " << newConfig.eui64 << " has changed. Sending new config." << std::endl;
-                    gbrXML xmlGenerator(&newConfig);
-                    std::cout << *xmlGenerator.GetXML() << std::endl;
-                    listener->SendMultiCast(xmlGenerator.GetXML());
+                 nodeIsDeleted = false;
+                 std::cout << "Storing new config for node: " << newConf.eui64 << std::endl;
+                try {
+                      if( DBResult::UPDATED == db->StoreNodeConfig(&newConf) )
+                      {
+                          std::cout << "Configuration for: " << newConf.eui64 << " has changed. Sending new config." << std::endl;
+                          gbrXML xmlGenerator(&newConf);
+                          std::cout << *xmlGenerator.GetXML() << std::endl;
+                          listener->SendMultiCast(xmlGenerator.GetXML());
+                      }
+                    } catch (std::runtime_error& e) {
+                        std::cout << e.what() << std::endl;
+                    }
                 }
-            } catch (std::runtime_error& e) {
-                std::cout << e.what() << std::endl;
+
+                if( nodeIsDeleted )
+                {
+                      knownConf.status = 1;
+                      db->StoreNodeConfig(&knownConf);
+                }
             }
         }
-        break;
+      break;
     }
     case gbrXMLMessageType::NODECONFIG:
     {
