@@ -1,0 +1,8 @@
+[Unit]
+Description=Recommission nodes
+
+[Timer]
+OnUnitActiveSec=10min
+
+[Install]
+WantedBy=timers.target
