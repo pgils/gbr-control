@@ -220,7 +220,7 @@ int gbrDatabaseHandler::GetActiveNodes(std::vector<NodeConfig> *configs)
     } catch (const std::runtime_error&) {
         throw;
     }
-    sqlite3_bind_int64(stmt, 1, time(nullptr));
+    sqlite3_bind_int64(stmt, 1, time(nullptr)-NODE_TIMEOUT);
 
     while( SQLITE_ROW == sqlite3_step(stmt) )
     {
